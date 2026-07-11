@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VK Publisher</title>
+  <style>
+    body { font-family: system-ui, sans-serif; color: #1e293b; background: #f8fafc; margin: 0; padding: 1rem 1.25rem; }
+    h1 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+    label { display: block; margin-bottom: 0.75rem; font-size: 0.875rem; }
+    input, textarea { width: 100%; max-width: 28rem; padding: 0.45rem 0.55rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; }
+    button { padding: 0.45rem 0.9rem; border-radius: 0.5rem; border: 0; background: #0077ff; color: #fff; cursor: pointer; }
+    .muted { color: #64748b; font-size: 0.8rem; }
+    pre { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.75rem; font-size: 0.75rem; overflow: auto; }
+    .warn { background: #fef3c7; border: 1px solid #fcd34d; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>VK публикатор</h1>
+  <p class="muted">Публикует записи из CRM «Публикации» в сообщество VK по времени <code>publishedAt</code>.</p>
+
+  <form id="settings-form">
+    <label>
+      Токен VK API (access_token)
+      <input type="password" name="vk_access_token" autocomplete="off" placeholder="vk1.a...." />
+      <span class="muted">Права: wall, groups, photos (offline). Создайте в VK ID / сообществе.</span>
+    </label>
+    <label>
+      ID сообщества (без минуса)
+      <input type="text" name="vk_group_id" placeholder="123456789" />
+    </label>
+    <label>
+      Интервал проверки (сек)
+      <input type="number" name="poll_interval" min="30" max="3600" />
+    </label>
+    <label>
+      Категории через запятую
+      <input type="text" name="publish_categories" placeholder="news,promotion,general" />
+    </label>
+    <button type="submit">Сохранить</button>
+  </form>
+
+  <h2 style="font-size:0.95rem;margin:1.25rem 0 0.5rem">Статус</h2>
+  <pre id="snapshot">Загрузка…</pre>
+
+  <script src="wash-module-sdk.js"></script>
+  <script>
+    const MODULE_ID = 'vk-publisher';
+
+    async function refresh() {
+      const status = await WashModule.api(`/installed/${MODULE_ID}/status`);
+      const snap = status.snapshot;
+      if (!snap) {
+        document.getElementById('snapshot').textContent = 'Запустите модуль после сохранения настроек';
+        return;
+      }
+      document.getElementById('snapshot').textContent = JSON.stringify(snap, null, 2);
+      if (status.settings) {
+        const s = status.settings;
+        document.querySelector('[name=vk_group_id]').value = s.vk_group_id ?? '';
+        document.querySelector('[name=poll_interval]').value = s.poll_interval ?? 60;
+        document.querySelector('[name=publish_categories]').value = s.publish_categories ?? 'news,promotion,general';
+        if (s.vk_access_token) {
+          document.querySelector('[name=vk_access_token]').placeholder = '•••••••• (сохранён)';
+        }
+      }
+    }
+
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const token = String(fd.get('vk_access_token') || '').trim();
+      const settings = {
+        vk_group_id: String(fd.get('vk_group_id') || '').trim(),
+        poll_interval: Number(fd.get('poll_interval')),
+        publish_categories: String(fd.get('publish_categories') || '').trim(),
+      };
+      if (token) settings.vk_access_token = token;
+      await WashModule.api(`/installed/${MODULE_ID}/settings`, {
+        method: 'PUT',
+        body: JSON.stringify({ settings }),
+      });
+      document.querySelector('[name=vk_access_token]').value = '';
+      await refresh();
+    });
+
+    refresh();
+    setInterval(refresh, 12000);
+  </script>
+</body>
+</html>

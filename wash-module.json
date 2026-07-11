@@ -1,0 +1,50 @@
+{
+  "id": "vk-publisher",
+  "name": { "ru": "VK публикатор", "en": "VK Publisher" },
+  "description": {
+    "ru": "Публикует записи из раздела «Публикации» CRM в сообщество ВКонтакте в запланированное время.",
+    "en": "Publishes CRM Publications to a VK community at the scheduled time."
+  },
+  "version": "1.0.0",
+  "author": "WASH-PRO",
+  "license": "MIT",
+  "category": "publishing",
+  "icon": "assets/icon.svg",
+  "repository": "https://github.com/WASH-PRO/wash-module-vk-publisher",
+  "dependencies": [],
+  "minCrmVersion": "1.1.29",
+  "entrypoint": "src/main.py",
+  "helpPage": "ui/help.html",
+  "scriptType": "daemon",
+  "settingsSchema": [
+    {
+      "key": "vk_access_token",
+      "type": "string",
+      "label": { "ru": "Токен VK API", "en": "VK API access token" },
+      "default": ""
+    },
+    {
+      "key": "vk_group_id",
+      "type": "string",
+      "label": { "ru": "ID сообщества (без минуса)", "en": "Community ID (without minus)" },
+      "default": ""
+    },
+    {
+      "key": "poll_interval",
+      "type": "number",
+      "label": { "ru": "Интервал проверки (сек)", "en": "Check interval (sec)" },
+      "default": 60,
+      "min": 30,
+      "max": 3600
+    },
+    {
+      "key": "publish_categories",
+      "type": "string",
+      "label": {
+        "ru": "Категории (news,promotion,general)",
+        "en": "Categories (news,promotion,general)"
+      },
+      "default": "news,promotion,general"
+    }
+  ]
+}
