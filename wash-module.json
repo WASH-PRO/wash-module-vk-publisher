@@ -5,7 +5,7 @@
     "ru": "Публикует записи из раздела «Публикации» CRM в сообщество ВКонтакте в запланированное время.",
     "en": "Publishes CRM Publications to a VK community at the scheduled time."
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "WASH-PRO",
   "license": "MIT",
   "category": "publishing",

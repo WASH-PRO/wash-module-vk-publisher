@@ -7,6 +7,7 @@ import json
 import os
 import re
 import time
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -22,6 +23,7 @@ PUBLISH_CATEGORIES = os.environ.get(
 ).strip().lower()
 
 VK_API_VERSION = "5.199"
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
 PUBLISHED_MAP_FILE = "published_vk.json"
 SNAPSHOT_FILE = "last_snapshot.json"
 
@@ -102,38 +104,100 @@ def should_publish(message: dict, now: datetime) -> bool:
     return True
 
 
-def build_vk_message(message: dict) -> str:
-    title = str(message.get("title") or "").strip()
-    body = strip_html(str(message.get("body") or ""))
-    parts = []
-    if title:
-        parts.append(title)
-    if body:
-        parts.append(body)
-    image_url = str(message.get("imageUrl") or "").strip()
-    if image_url:
-        parts.append(image_url)
-    text = "\n\n".join(parts).strip()
-    return text[:4096]
+def resolve_image_url(url: str) -> str:
+    target = url.strip()
+    if not target:
+        return ""
+    if target.startswith(("http://", "https://")):
+        return target
+    if target.startswith("/"):
+        return f"{API_BASE}{target}"
+    return target
 
 
-def vk_wall_post(message_text: str) -> dict:
+def guess_image_meta(url: str, content_type: str) -> tuple[str, str]:
+    path = urllib.parse.urlparse(url).path
+    name = os.path.basename(path) or "photo.jpg"
+    if "." not in name:
+        lowered = content_type.lower()
+        if "png" in lowered:
+            name = "photo.png"
+        elif "webp" in lowered:
+            name = "photo.webp"
+        elif "gif" in lowered:
+            name = "photo.gif"
+        else:
+            name = "photo.jpg"
+    mime = content_type.split(";")[0].strip().lower() or "image/jpeg"
+    if mime == "application/octet-stream":
+        ext = name.rsplit(".", 1)[-1].lower()
+        mime = {
+            "png": "image/png",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "webp": "image/webp",
+            "gif": "image/gif",
+        }.get(ext, "image/jpeg")
+    return name, mime
+
+
+def download_image(url: str) -> tuple[bytes, str, str] | None:
+    target = resolve_image_url(url)
+    if not target:
+        return None
+    try:
+        req = urllib.request.Request(
+            target, headers={"User-Agent": "WASH-VK-Publisher/1.1"}
+        )
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            content_type = str(resp.headers.get("Content-Type") or "image/jpeg")
+            data = resp.read(MAX_IMAGE_BYTES + 1)
+            if len(data) > MAX_IMAGE_BYTES:
+                print(f"[vk-publisher] image too large: {target}")
+                return None
+            if not data:
+                return None
+            filename, mime = guess_image_meta(target, content_type)
+            return data, filename, mime
+    except Exception as err:  # noqa: BLE001
+        print(f"[vk-publisher] download image failed ({target}): {err}")
+        return None
+
+
+def multipart_body(
+    boundary: str,
+    fields: dict[str, str],
+    files: dict[str, tuple[str, bytes, str]],
+) -> bytes:
+    chunks: list[bytes] = []
+    for key, value in fields.items():
+        chunks.append(f"--{boundary}\r\n".encode())
+        chunks.append(f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode())
+        chunks.append(f"{value}\r\n".encode())
+    for key, (filename, content, mime) in files.items():
+        chunks.append(f"--{boundary}\r\n".encode())
+        chunks.append(
+            f'Content-Disposition: form-data; name="{key}"; filename="{filename}"\r\n'.encode()
+        )
+        chunks.append(f"Content-Type: {mime}\r\n\r\n".encode())
+        chunks.append(content)
+        chunks.append(b"\r\n")
+    chunks.append(f"--{boundary}--\r\n".encode())
+    return b"".join(chunks)
+
+
+def vk_api_call(method: str, params: dict) -> dict | list:
     if not VK_ACCESS_TOKEN:
         raise ValueError("VK_ACCESS_TOKEN не задан")
-    if not VK_GROUP_ID:
-        raise ValueError("VK_GROUP_ID не задан")
 
-    group_id = VK_GROUP_ID.lstrip("-")
-    params = {
+    payload_params = {
+        **params,
         "access_token": VK_ACCESS_TOKEN,
         "v": VK_API_VERSION,
-        "owner_id": f"-{group_id}",
-        "from_group": "1",
-        "message": message_text,
     }
-    url = "https://api.vk.com/method/wall.post?" + urllib.parse.urlencode(params)
+    url = f"https://api.vk.com/method/{method}?" + urllib.parse.urlencode(payload_params)
     req = urllib.request.Request(url, method="POST")
-    with urllib.request.urlopen(req, timeout=45) as resp:
+    with urllib.request.urlopen(req, timeout=60) as resp:
         payload = json.loads(resp.read().decode("utf-8"))
 
     if "error" in payload:
@@ -143,6 +207,124 @@ def vk_wall_post(message_text: str) -> dict:
         raise RuntimeError(f"VK API error {code}: {msg}")
 
     return payload.get("response", {})
+
+
+def vk_get_wall_upload_server(group_id: str) -> dict:
+    response = vk_api_call("photos.getWallUploadServer", {"group_id": group_id})
+    if not isinstance(response, dict) or not response.get("upload_url"):
+        raise RuntimeError("photos.getWallUploadServer: upload_url missing")
+    return response
+
+
+def vk_upload_photo_bytes(
+    upload_url: str, image_bytes: bytes, filename: str, mime: str
+) -> dict:
+    boundary = uuid.uuid4().hex
+    body = multipart_body(boundary, {}, {"photo": (filename, image_bytes, mime)})
+    req = urllib.request.Request(
+        upload_url,
+        data=body,
+        method="POST",
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+    )
+    with urllib.request.urlopen(req, timeout=90) as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+
+    if not isinstance(payload, dict):
+        raise RuntimeError("VK upload server returned invalid response")
+    if payload.get("error"):
+        raise RuntimeError(f"VK upload error: {payload['error']}")
+    return payload
+
+
+def vk_save_wall_photo(group_id: str, upload_result: dict) -> dict:
+    photo = upload_result.get("photo")
+    server = upload_result.get("server")
+    hash_value = upload_result.get("hash")
+    if photo is None or server is None or hash_value is None:
+        raise RuntimeError("VK upload response missing photo/server/hash")
+
+    saved = vk_api_call(
+        "photos.saveWallPhoto",
+        {
+            "group_id": group_id,
+            "photo": photo if isinstance(photo, str) else json.dumps(photo),
+            "server": str(server),
+            "hash": str(hash_value),
+        },
+    )
+    if isinstance(saved, list) and saved:
+        first = saved[0]
+        if isinstance(first, dict):
+            return first
+    raise RuntimeError("photos.saveWallPhoto returned empty result")
+
+
+def photo_attachment(photo: dict) -> str:
+    owner_id = photo.get("owner_id")
+    photo_id = photo.get("id")
+    if owner_id is None or photo_id is None:
+        raise RuntimeError("saved photo missing owner_id/id")
+    return f"photo{owner_id}_{photo_id}"
+
+
+def upload_wall_photo_from_url(image_url: str, group_id: str) -> str:
+    downloaded = download_image(image_url)
+    if not downloaded:
+        raise RuntimeError(f"could not download image: {image_url}")
+
+    image_bytes, filename, mime = downloaded
+    upload_server = vk_get_wall_upload_server(group_id)
+    upload_result = vk_upload_photo_bytes(
+        str(upload_server["upload_url"]), image_bytes, filename, mime
+    )
+    saved_photo = vk_save_wall_photo(group_id, upload_result)
+    return photo_attachment(saved_photo)
+
+
+def build_vk_message(message: dict) -> str:
+    title = str(message.get("title") or "").strip()
+    body = strip_html(str(message.get("body") or ""))
+    parts = []
+    if title:
+        parts.append(title)
+    if body:
+        parts.append(body)
+    return "\n\n".join(parts).strip()[:4096]
+
+
+def vk_wall_post(message_text: str, attachments: list[str] | None = None) -> dict:
+    if not VK_GROUP_ID:
+        raise ValueError("VK_GROUP_ID не задан")
+
+    group_id = VK_GROUP_ID.lstrip("-")
+    params: dict[str, str] = {
+        "owner_id": f"-{group_id}",
+        "from_group": "1",
+        "message": message_text,
+    }
+    if attachments:
+        params["attachments"] = ",".join(attachments)
+
+    response = vk_api_call("wall.post", params)
+    if not isinstance(response, dict):
+        raise RuntimeError("wall.post returned unexpected response")
+    return response
+
+
+def publish_to_vk(message: dict) -> dict:
+    text = build_vk_message(message)
+    image_url = str(message.get("imageUrl") or "").strip()
+    attachments: list[str] = []
+
+    if image_url:
+        group_id = VK_GROUP_ID.lstrip("-")
+        attachments.append(upload_wall_photo_from_url(image_url, group_id))
+
+    if not text and not attachments:
+        raise ValueError("empty message")
+
+    return vk_wall_post(text, attachments or None)
 
 
 def message_id(message: dict) -> str:
@@ -158,7 +340,9 @@ def run_cycle() -> dict:
     published_map: dict[str, dict] = load_json(published_map_path, {})  # type: ignore[assignment]
 
     messages = fetch_info_messages()
-    pending = [m for m in messages if should_publish(m, now) and message_id(m) not in published_map]
+    pending = [
+        m for m in messages if should_publish(m, now) and message_id(m) not in published_map
+    ]
 
     published_this_cycle: list[dict] = []
     errors: list[dict] = []
@@ -166,16 +350,13 @@ def run_cycle() -> dict:
     for msg in pending:
         mid = message_id(msg)
         try:
-            text = build_vk_message(msg)
-            if not text:
-                errors.append({"id": mid, "error": "empty message"})
-                continue
-            response = vk_wall_post(text)
+            response = publish_to_vk(msg)
             post_id = response.get("post_id")
             published_map[mid] = {
                 "crmId": mid,
                 "vkPostId": post_id,
                 "title": msg.get("title"),
+                "hasPhoto": bool(str(msg.get("imageUrl") or "").strip()),
                 "publishedAt": now.isoformat(),
                 "crmPublishedAt": msg.get("publishedAt"),
             }
