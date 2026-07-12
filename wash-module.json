@@ -1,11 +1,14 @@
 {
   "id": "vk-publisher",
-  "name": { "ru": "VK публикатор", "en": "VK Publisher" },
+  "name": {
+    "ru": "VK публикатор",
+    "en": "VK Publisher"
+  },
   "description": {
     "ru": "Публикует записи из раздела «Публикации» CRM в сообщество ВКонтакте в запланированное время.",
     "en": "Publishes CRM Publications to a VK community at the scheduled time."
   },
-  "version": "1.2.1",
+  "version": "1.2.2",
   "author": "WASH-PRO",
   "license": "MIT",
   "category": "publishing",
@@ -20,19 +23,28 @@
     {
       "key": "vk_access_token",
       "type": "string",
-      "label": { "ru": "Токен VK API", "en": "VK API access token" },
+      "label": {
+        "ru": "Токен VK API",
+        "en": "VK API access token"
+      },
       "default": ""
     },
     {
       "key": "vk_group_id",
       "type": "string",
-      "label": { "ru": "ID сообщества (без минуса)", "en": "Community ID (without minus)" },
+      "label": {
+        "ru": "ID сообщества (без минуса)",
+        "en": "Community ID (without minus)"
+      },
       "default": ""
     },
     {
       "key": "poll_interval",
       "type": "number",
-      "label": { "ru": "Интервал проверки (сек)", "en": "Check interval (sec)" },
+      "label": {
+        "ru": "Интервал проверки (сек)",
+        "en": "Check interval (sec)"
+      },
       "default": 60,
       "min": 30,
       "max": 3600
