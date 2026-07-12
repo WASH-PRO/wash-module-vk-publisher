@@ -20,25 +20,25 @@
         en: 'Publishes CRM Publications to a VK community at publishedAt. Photos are uploaded as attachments.',
       },
       settingsHtml: `
-        <div class="wm-field">
-          <label class="wm-field-label">${WashModule.t({ ru: 'Токен VK API', en: 'VK API token' })}</label>
-          <input class="wm-input" type="password" name="vk_access_token" autocomplete="off" placeholder="vk1.a...." />
+        <div class="wm-field wm-field--full">
+          <label class="wm-field-label" for="vk_access_token">${WashModule.t({ ru: 'Токен VK API', en: 'VK API token' })}</label>
+          <input class="wm-input" id="vk_access_token" type="password" name="vk_access_token" autocomplete="off" placeholder="vk1.a...." />
           <span class="wm-field-hint">${WashModule.t({ ru: 'Права: wall, groups, photos. Оставьте пустым, чтобы не менять сохранённый токен.', en: 'Scopes: wall, groups, photos. Leave empty to keep the saved token.' })}</span>
         </div>
-        <div class="wm-grid-2">
-          <div class="wm-field">
-            <label class="wm-field-label">${WashModule.t({ ru: 'ID сообщества', en: 'Community ID' })}</label>
-            <input class="wm-input" type="text" name="vk_group_id" placeholder="123456789" />
-            <span class="wm-field-hint">${WashModule.t({ ru: 'Без минуса', en: 'Without minus sign' })}</span>
-          </div>
-          <div class="wm-field">
-            <label class="wm-field-label">${WashModule.t({ ru: 'Интервал проверки (сек)', en: 'Check interval (sec)' })}</label>
-            <input class="wm-input" type="number" name="poll_interval" min="30" max="3600" />
-          </div>
+        <div class="wm-field">
+          <label class="wm-field-label" for="vk_group_id">${WashModule.t({ ru: 'ID сообщества', en: 'Community ID' })}</label>
+          <input class="wm-input" id="vk_group_id" type="text" name="vk_group_id" placeholder="123456789" />
+          <span class="wm-field-hint">${WashModule.t({ ru: 'Числовой ID без минуса.', en: 'Numeric ID without minus sign.' })}</span>
         </div>
         <div class="wm-field">
-          <label class="wm-field-label">${WashModule.t({ ru: 'Категории', en: 'Categories' })}</label>
-          <input class="wm-input" type="text" name="publish_categories" placeholder="news,promotion,general" />
+          <label class="wm-field-label" for="poll_interval">${WashModule.t({ ru: 'Интервал проверки (сек)', en: 'Check interval (sec)' })}</label>
+          <input class="wm-input" id="poll_interval" type="number" name="poll_interval" min="30" max="3600" />
+          <span class="wm-field-hint">${WashModule.t({ ru: 'Как часто проверять публикации CRM.', en: 'How often to check CRM publications.' })}</span>
+        </div>
+        <div class="wm-field wm-field--full">
+          <label class="wm-field-label" for="publish_categories">${WashModule.t({ ru: 'Категории', en: 'Categories' })}</label>
+          <input class="wm-input" id="publish_categories" type="text" name="publish_categories" placeholder="news,promotion,general" />
+          <span class="wm-field-hint">${WashModule.t({ ru: 'Через запятую: news, promotion, general.', en: 'Comma-separated: news, promotion, general.' })}</span>
         </div>`,
       collectSettings(form) {
         const token = String(form.vk_access_token.value || '').trim();
