@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Справка — VK публикатор</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.55; color: #1e293b; margin: 0; padding: 1.25rem; max-width: 42rem; }
+    h1 { font-size: 1.15rem; margin: 0 0 0.75rem; }
+    h2 { font-size: 0.95rem; margin: 1.25rem 0 0.5rem; }
+    p, li { font-size: 0.875rem; }
+    code { background: #f1f5f9; padding: 0.1rem 0.35rem; border-radius: 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>VK публикатор</h1>
+  <p>Синхронизирует раздел CRM <strong>Публикации</strong> (<code>/info-messages</code>) с лентой сообщества ВКонтакте.</p>
+
+  <h2>Настройка VK</h2>
+  <ol>
+    <li>Создайте приложение или получите ключ доступа сообщества с правами <code>wall</code>, <code>groups</code>, <code>photos</code>.</li>
+    <li>Укажите <strong>токен</strong> и <strong>ID сообщества</strong> (число без минуса).</li>
+    <li>Запустите модуль в PyOrchestrator.</li>
+  </ol>
+
+  <h2>Когда публикуется пост</h2>
+  <ul>
+    <li>Статус <code>scheduled</code> или <code>published</code></li>
+    <li>Время <code>publishedAt</code> уже наступило</li>
+    <li>Не истёк <code>expiresAt</code> (если задан)</li>
+    <li>Категория входит в список фильтра</li>
+  </ul>
+
+  <h2>Формат поста VK</h2>
+  <p>Заголовок + текст (HTML очищается). Если указан <code>imageUrl</code>, изображение скачивается и загружается в VK как вложение к посту (до 10 МБ, JPG/PNG/WebP/GIF).</p>
+  <p>URL должен быть доступен из контейнера модуля (абсолютный или относительный путь от CRM API).</p>
+
+  <h2>Данные модуля</h2>
+  <p>Журнал опубликованных записей: <code>data/published_vk.json</code>. Повторная публикация одной CRM-записи не выполняется.</p>
+</body>
+</html>

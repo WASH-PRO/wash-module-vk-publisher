@@ -1,24 +1,26 @@
+**Language:** **English** · [Русский](README.ru.md)
+
 # wash-module-vk-publisher
 
-Модуль WASH PRO CRM: публикация записей из раздела **Публикации** в сообщество ВКонтакте.
+WASH PRO CRM module: publish entries from **Publications** to a VK community.
 
-## Возможности
+## Features
 
-- Опрос `GET /api/crm/info-messages`
-- Публикация в VK при наступлении `publishedAt`
-- Фильтр по категориям (`news`, `promotion`, `general`)
-- Загрузка изображения из `imageUrl` в VK (полноценный пост с фото)
-- Журнал опубликованных записей в `data/published_vk.json`
+- Polls `GET /api/crm/info-messages`
+- Publishes to VK when `publishedAt` is reached
+- Category filter (`news`, `promotion`, `general`)
+- Uploads image from `imageUrl` to VK (full post with photo)
+- Published entries log in `data/published_vk.json`
 
-## Настройки
+## Settings
 
-| Параметр | Описание |
-|----------|----------|
-| `vk_access_token` | Токен VK API (wall, groups, photos) |
-| `vk_group_id` | ID сообщества без минуса |
-| `poll_interval` | Интервал проверки CRM (сек) |
-| `publish_categories` | Категории через запятую |
+| Parameter | Description |
+|-----------|-------------|
+| `vk_access_token` | VK API token (wall, groups, photos) |
+| `vk_group_id` | Community ID without minus sign |
+| `poll_interval` | CRM check interval (sec) |
+| `publish_categories` | Comma-separated categories |
 
-## Установка
+## Install
 
-Dashboard → Автоматизация → Модули → **VK публикатор** → Установить → Настройки → Запустить.
+Dashboard → Automation → Modules → **VK Publisher** → Install → Settings → Start.

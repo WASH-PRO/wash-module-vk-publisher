@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Справка — VK публикатор</title>
+  <title>Help — VK Publisher</title>
   <style>
     body { font-family: system-ui, sans-serif; line-height: 1.55; color: #1e293b; margin: 0; padding: 1.25rem; max-width: 42rem; }
     h1 { font-size: 1.15rem; margin: 0 0 0.75rem; }
@@ -13,29 +13,29 @@
   </style>
 </head>
 <body>
-  <h1>VK публикатор</h1>
-  <p>Синхронизирует раздел CRM <strong>Публикации</strong> (<code>/info-messages</code>) с лентой сообщества ВКонтакте.</p>
+  <h1>VK Publisher</h1>
+  <p>Syncs the CRM <strong>Publications</strong> section (<code>/info-messages</code>) with a VK community feed.</p>
 
-  <h2>Настройка VK</h2>
+  <h2>VK setup</h2>
   <ol>
-    <li>Создайте приложение или получите ключ доступа сообщества с правами <code>wall</code>, <code>groups</code>, <code>photos</code>.</li>
-    <li>Укажите <strong>токен</strong> и <strong>ID сообщества</strong> (число без минуса).</li>
-    <li>Запустите модуль в PyOrchestrator.</li>
+    <li>Create an app or get a community access key with <code>wall</code>, <code>groups</code>, <code>photos</code> permissions.</li>
+    <li>Set the <strong>token</strong> and <strong>community ID</strong> (numeric, without minus).</li>
+    <li>Start the module in PyOrchestrator.</li>
   </ol>
 
-  <h2>Когда публикуется пост</h2>
+  <h2>When a post is published</h2>
   <ul>
-    <li>Статус <code>scheduled</code> или <code>published</code></li>
-    <li>Время <code>publishedAt</code> уже наступило</li>
-    <li>Не истёк <code>expiresAt</code> (если задан)</li>
-    <li>Категория входит в список фильтра</li>
+    <li>Status is <code>scheduled</code> or <code>published</code></li>
+    <li><code>publishedAt</code> time has passed</li>
+    <li><code>expiresAt</code> has not passed (if set)</li>
+    <li>Category is in the filter list</li>
   </ul>
 
-  <h2>Формат поста VK</h2>
-  <p>Заголовок + текст (HTML очищается). Если указан <code>imageUrl</code>, изображение скачивается и загружается в VK как вложение к посту (до 10 МБ, JPG/PNG/WebP/GIF).</p>
-  <p>URL должен быть доступен из контейнера модуля (абсолютный или относительный путь от CRM API).</p>
+  <h2>VK post format</h2>
+  <p>Title + body (HTML stripped). If <code>imageUrl</code> is set, the image is downloaded and uploaded to VK as a post attachment (up to 10 MB, JPG/PNG/WebP/GIF).</p>
+  <p>The URL must be reachable from the module container (absolute or relative to CRM API).</p>
 
-  <h2>Данные модуля</h2>
-  <p>Журнал опубликованных записей: <code>data/published_vk.json</code>. Повторная публикация одной CRM-записи не выполняется.</p>
+  <h2>Module data</h2>
+  <p>Published entries log: <code>data/published_vk.json</code>. The same CRM entry is not published twice.</p>
 </body>
 </html>
