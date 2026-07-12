@@ -59,8 +59,8 @@
           form.vk_access_token.placeholder = WashModule.t({ ru: '•••••••• (сохранён)', en: '•••••••• (saved)' });
         }
       },
-      metrics(snap) {
-        if (!snap) return [];
+      metrics(snap, status) {
+        if (!snap || !snap.recordedAt) return [];
         return [
           { label: WashModule.t({ ru: 'Опубликовано', en: 'Published' }), value: snap.publishedTotal ?? 0, accent: true },
           { label: WashModule.t({ ru: 'В очереди', en: 'Pending' }), value: snap.pendingCount ?? 0 },
@@ -71,9 +71,13 @@
           },
         ];
       },
-      renderOverview(snap) {
-        if (!snap) {
-          return `<div class="wm-empty">${WashModule.escapeHtml(WashModule.t({ ru: 'Нет статуса.', en: 'No status yet.' }))}</div>`;
+      renderOverview(snap, status) {
+        if (!snap || !snap.recordedAt) {
+          const running = status && (status.activeRunStatus === 'running' || (status.state && status.state.status === 'running'));
+          const hint = running
+            ? WashModule.t({ ru: 'Ожидание первой проверки публикаций…', en: 'Waiting for the first publications check…' })
+            : WashModule.t({ ru: 'Нет статуса — запустите модуль.', en: 'No status yet — start the module.' });
+          return `<div class="wm-empty">${WashModule.escapeHtml(hint)}</div>`;
         }
         const last = snap.lastPublished;
         const lastHtml = last
