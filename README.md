@@ -24,3 +24,7 @@ WASH PRO CRM module: publish entries from **Publications** to a VK community.
 ## Install
 
 Dashboard → Automation → Modules → **VK Publisher** → Install → Settings → Start.
+
+---
+
+**Website:** [wash-pro.tech](https://wash-pro.tech) · **GitHub:** [WASH-PRO](https://github.com/WASH-PRO)
